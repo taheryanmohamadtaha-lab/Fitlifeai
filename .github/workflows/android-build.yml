@@ -1,0 +1,79 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android project files
+        run: |
+          mkdir -p /tmp/fl_backup
+          cp -r lib test pubspec.yaml /tmp/fl_backup/
+          flutter create --platforms=android --org ir.fitlife --project-name fitlife_ai .
+          rm -rf lib test pubspec.yaml
+          cp -r /tmp/fl_backup/lib /tmp/fl_backup/test /tmp/fl_backup/pubspec.yaml .
+          rm -f test/widget_test.dart
+
+      - name: Set Persian app name
+        run: |
+          sed -i 's/android:label="[^"]*"/android:label="فیت‌لایف"/' android/app/src/main/AndroidManifest.xml
+          grep -n 'android:label' android/app/src/main/AndroidManifest.xml
+
+      - name: Download Persian font (Vazirmatn)
+        run: |
+          mkdir -p assets/fonts
+          BASE="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/ttf"
+          curl -fL --retry 3 -o assets/fonts/Vazirmatn-Regular.ttf "$BASE/Vazirmatn-Regular.ttf"
+          curl -fL --retry 3 -o assets/fonts/Vazirmatn-Bold.ttf "$BASE/Vazirmatn-Bold.ttf"
+          ls -la assets/fonts
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build Debug APK
+        run: flutter build apk --debug
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FitLife-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FitLife-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
