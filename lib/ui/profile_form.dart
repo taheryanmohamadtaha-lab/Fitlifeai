@@ -38,7 +38,7 @@ class _ProfileFormState extends State<ProfileForm> {
   bool saving = false;
   bool manualTargets = false;
 
-  static const activities = <double, String>{
+  static final activities = <double, String>{
     1.2: 'کم‌تحرک',
     1.375: 'فعالیت سبک',
     1.55: 'فعالیت متوسط',
