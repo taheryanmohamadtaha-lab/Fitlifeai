@@ -46,7 +46,7 @@ class Calc {
   static Targets targets({required int kcal, required double kg}) {
     final protein = (kg * 1.13).round();
     final fat = (kcal * 0.315 / 9).round();
-    var carbs = ((kcal - protein * 4 - fat * 9) / 4).round();
+    var carbs = ((kcal - protein * 4 - fat * 9) / 4).floor();
     if (carbs < 0) carbs = 0;
     final fiber = kcal >= 1800 ? 30 : 25;
     return Targets(kcal, protein, carbs, fat, fiber);
