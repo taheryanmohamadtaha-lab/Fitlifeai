@@ -279,6 +279,8 @@ class ReminderService {
         when,
         _details(d),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents:
             d.weekday != null ? DateTimeComponents.dayOfWeekAndTime : DateTimeComponents.time,
       );
