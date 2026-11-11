@@ -15,6 +15,12 @@ dependencies:
   sqflite: ^2.3.3
   path: ^1.9.0
   fl_chart: ^0.69.0
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  path_provider: ^2.1.5
+  share_plus: ^10.1.4
+  file_picker: ^8.1.6
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

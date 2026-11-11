@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../core/calc.dart';
 import '../core/fa.dart';
 import '../data/db.dart';
 import '../data/models.dart';
+import '../services/reminders.dart';
 
 class AppState extends ChangeNotifier {
   bool ready = false;
@@ -12,6 +16,8 @@ class AppState extends ChangeNotifier {
 
   List<Food> foods = [];
   List<WeightEntry> weights = [];
+  List<PainEntry> pains = [];
+  List<PhotoEntry> photos = [];
 
   DateTime selectedDay = dateOnly(DateTime.now());
   List<LogEntry> dayLogs = [];
@@ -23,6 +29,13 @@ class AppState extends ChangeNotifier {
     await _loadAll();
     ready = true;
     notifyListeners();
+    if (profile != null) _rescheduleQuietly();
+  }
+
+  Future<void> _rescheduleQuietly() async {
+    try {
+      await ReminderService.rescheduleAll();
+    } catch (_) {}
   }
 
   Future<void> _loadAll() async {
@@ -31,7 +44,15 @@ class AppState extends ChangeNotifier {
     themeMode = s['theme'] == 'light' ? ThemeMode.light : ThemeMode.dark;
     foods = await AppDb.foods();
     weights = await AppDb.weights();
+    pains = await AppDb.pains();
+    photos = await AppDb.photos();
     await _loadLogs();
+  }
+
+  /// بارگذاری دوباره همه داده‌ها (بعد از بازیابی پشتیبان)
+  Future<void> reloadAll() async {
+    await _loadAll();
+    notifyListeners();
   }
 
   Future<void> _loadLogs() async {
@@ -74,6 +95,12 @@ class AppState extends ChangeNotifier {
     }
     await AppDb.setSettings(p.toMap());
     profile = p;
+    if (firstTime) {
+      try {
+        await ReminderService.requestPermission();
+      } catch (_) {}
+      _rescheduleQuietly();
+    }
     if (firstTime && weights.isEmpty) {
       await AppDb.saveWeight(p.startDate, p.startWeight, null);
       weights = await AppDb.weights();
@@ -138,6 +165,42 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------- درد کمر و پا ----------
+  Future<void> addPain(PainEntry e) async {
+    await AppDb.addPain(e);
+    pains = await AppDb.pains();
+    notifyListeners();
+  }
+
+  Future<void> deletePain(int id) async {
+    await AppDb.deletePain(id);
+    pains = await AppDb.pains();
+    notifyListeners();
+  }
+
+  /// آخرین ثبت درد که علائم هشدار اورژانسی دارد (در ۳ روز اخیر)
+  PainEntry? get recentEmergency {
+    final from = dateKey(dateOnly(DateTime.now()).subtract(const Duration(days: 3)));
+    for (final e in pains.reversed) {
+      if (e.date.compareTo(from) < 0) break;
+      if (e.emergency) return e;
+    }
+    return null;
+  }
+
+  // ---------- عکس پیشرفت ----------
+  Future<void> addPhoto(String path) async {
+    await AppDb.addPhoto(dateKey(dateOnly(DateTime.now())), path);
+    photos = await AppDb.photos();
+    notifyListeners();
+  }
+
+  Future<void> deletePhoto(PhotoEntry p) async {
+    await AppDb.deletePhoto(p.id);
+    photos = await AppDb.photos();
+    notifyListeners();
+  }
+
   // ---------- آب ----------
   Future<void> addWater(int ml) async {
     final today = dateKey(dateOnly(DateTime.now()));
@@ -149,6 +212,14 @@ class AppState extends ChangeNotifier {
 
   // ---------- حذف کامل ----------
   Future<void> wipeAll() async {
+    try {
+      await ReminderService.cancelAll();
+    } catch (_) {}
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final folder = Directory('${dir.path}/progress_photos');
+      if (await folder.exists()) await folder.delete(recursive: true);
+    } catch (_) {}
     await AppDb.wipeUserData();
     profile = null;
     themeMode = ThemeMode.dark;

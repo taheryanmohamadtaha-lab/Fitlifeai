@@ -5,7 +5,12 @@ import '../core/calc.dart';
 import '../core/fa.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
+import 'backup_screen.dart';
+import 'pain_screen.dart';
+import 'photos_screen.dart';
 import 'profile_form.dart';
+import 'reminders_screen.dart';
+import 'reports_screen.dart';
 import 'widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -78,6 +83,19 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         AppCard(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            children: [
+              _item(context, Icons.healing_outlined, 'پایش درد کمر و پا', C.red, const PainScreen()),
+              _item(context, Icons.insights_rounded, 'گزارش‌ها', C.blue, const ReportsScreen()),
+              _item(context, Icons.notifications_active_outlined, 'یادآوری‌ها', C.orange, const RemindersScreen()),
+              _item(context, Icons.photo_camera_back_outlined, 'عکس‌های پیشرفت', C.purple, const PhotosScreen()),
+              _item(context, Icons.backup_outlined, 'پشتیبان‌گیری و بازیابی', C.green, const BackupScreen()),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -145,6 +163,18 @@ class SettingsScreen extends StatelessWidget {
       ],
     );
   }
+
+  Widget _item(BuildContext context, IconData i, String t, Color c, Widget page) => ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+              color: c.withOpacity(0.16), borderRadius: BorderRadius.circular(12)),
+          child: Icon(i, color: c, size: 22),
+        ),
+        title: Text(t, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
+        trailing: const Icon(Icons.chevron_left_rounded),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
+      );
 
   Widget _kv(BuildContext context, String k, String v) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 5),

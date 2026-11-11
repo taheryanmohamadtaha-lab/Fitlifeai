@@ -191,3 +191,77 @@ class WeightEntry {
   final double? waist;
   const WeightEntry(this.date, this.kg, this.waist);
 }
+
+/// ثبت وضعیت درد کمر و پا
+class PainEntry {
+  final int id;
+  final String date; // yyyy-MM-dd
+  final String time; // HH:mm
+  final int back, rleg, lleg; // ۰ تا ۱۰
+  final String spread; // محل انتشار درد
+  final bool numb, tingle, weak, saddle, bladder;
+  final String activities; // جداشده با «،»
+  final String note;
+
+  const PainEntry({
+    this.id = 0,
+    required this.date,
+    required this.time,
+    required this.back,
+    required this.rleg,
+    required this.lleg,
+    required this.spread,
+    required this.numb,
+    required this.tingle,
+    required this.weak,
+    required this.saddle,
+    required this.bladder,
+    required this.activities,
+    required this.note,
+  });
+
+  bool get emergency => weak || saddle || bladder;
+
+  List<String> get activityList =>
+      activities.isEmpty ? [] : activities.split('،').where((e) => e.isNotEmpty).toList();
+
+  Map<String, Object?> toRow() => {
+        'date': date,
+        'time': time,
+        'back': back,
+        'rleg': rleg,
+        'lleg': lleg,
+        'spread': spread,
+        'numb': numb ? 1 : 0,
+        'tingle': tingle ? 1 : 0,
+        'weak': weak ? 1 : 0,
+        'saddle': saddle ? 1 : 0,
+        'bladder': bladder ? 1 : 0,
+        'activities': activities,
+        'note': note,
+      };
+
+  factory PainEntry.fromRow(Map<String, Object?> r) => PainEntry(
+        id: r['id'] as int,
+        date: r['date'] as String,
+        time: (r['time'] as String?) ?? '',
+        back: (r['back'] as num).toInt(),
+        rleg: (r['rleg'] as num).toInt(),
+        lleg: (r['lleg'] as num).toInt(),
+        spread: (r['spread'] as String?) ?? '',
+        numb: (r['numb'] as int) == 1,
+        tingle: (r['tingle'] as int) == 1,
+        weak: (r['weak'] as int) == 1,
+        saddle: (r['saddle'] as int) == 1,
+        bladder: (r['bladder'] as int) == 1,
+        activities: (r['activities'] as String?) ?? '',
+        note: (r['note'] as String?) ?? '',
+      );
+}
+
+class PhotoEntry {
+  final int id;
+  final String date;
+  final String path;
+  const PhotoEntry(this.id, this.date, this.path);
+}

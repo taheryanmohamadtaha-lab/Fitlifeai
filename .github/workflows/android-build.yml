@@ -35,6 +35,9 @@ jobs:
           cp -r /tmp/fl_backup/lib /tmp/fl_backup/test /tmp/fl_backup/pubspec.yaml .
           rm -f test/widget_test.dart
 
+      - name: Patch Android project (notifications)
+        run: python3 tools/patch_android.py android
+
       - name: Set Persian app name
         run: |
           sed -i 's/android:label="[^"]*"/android:label="فیت‌لایف"/' android/app/src/main/AndroidManifest.xml
@@ -64,7 +67,10 @@ jobs:
         run: flutter build apk --debug
 
       - name: Build Release APK
-        run: flutter build apk --release
+        run: |
+          SHRINK=""
+          if flutter build apk --help | grep -q -e 'no-shrink'; then SHRINK="--no-shrink"; fi
+          flutter build apk --release $SHRINK
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4

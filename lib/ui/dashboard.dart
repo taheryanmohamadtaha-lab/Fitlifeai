@@ -7,6 +7,7 @@ import '../core/theme.dart';
 import '../data/models.dart';
 import '../state/app_state.dart';
 import 'food_sheets.dart';
+import 'pain_screen.dart';
 import 'progress.dart';
 import 'widgets.dart';
 
@@ -296,7 +297,30 @@ class Dashboard extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        if (p.spine) const _SpineCard(),
+        if (p.spine) ...[
+          if (s.recentEmergency != null) ...[
+            AppCard(
+              color: C.red.withOpacity(0.18),
+              onTap: () => showEmergencyDialog(context),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: C.red, size: 28),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'علامت هشدار اخیر ثبت شده است. در صورت ضعف پا، بی‌حسی ناحیه زینی یا اختلال ادرار/مدفوع فوراً به اورژانس بروید.',
+                      style: TextStyle(fontSize: 13, height: 1.8, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          _PainCard(),
+          const SizedBox(height: 12),
+          const _SpineCard(),
+        ],
       ],
     );
   }
@@ -401,4 +425,63 @@ class _SpineCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PainCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final s = context.watch<AppState>();
+    final last = s.pains.isEmpty ? null : s.pains.last;
+    return AppCard(
+      onTap: () => Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const PainScreen())),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.healing_outlined, color: C.orange),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text('وضعیت درد کمر و پا',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              ),
+              Icon(Icons.chevron_left_rounded, color: C.muted(context)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (last == null)
+            Text('هنوز ثبت نشده؛ برای ثبت وضعیت امروز بزنید.',
+                style: TextStyle(fontSize: 12.5, color: C.muted(context)))
+          else
+            Row(
+              children: [
+                _v(context, 'کمر', last.back, C.orange),
+                _v(context, 'پای راست', last.rleg, C.blue),
+                _v(context, 'پای چپ', last.lleg, C.purple),
+              ],
+            ),
+          if (last != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'آخرین ثبت: ${jalaliShort(parseKey(last.date))} ${faNum(last.time)}',
+                style: TextStyle(fontSize: 11.5, color: C.muted(context)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _v(BuildContext context, String l, int v, Color c) => Expanded(
+        child: Column(
+          children: [
+            Text('${faNum(v)}/۱۰',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: c)),
+            const SizedBox(height: 2),
+            Text(l, style: TextStyle(fontSize: 11.5, color: C.muted(context))),
+          ],
+        ),
+      );
 }
