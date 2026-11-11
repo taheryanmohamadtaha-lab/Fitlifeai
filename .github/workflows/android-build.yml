@@ -63,6 +63,24 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Force compileSdk 36 for plugins
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/force-compile-sdk.gradle <<'EOG'
+          allprojects {
+              afterEvaluate { p ->
+                  def ext = p.extensions.findByName('android')
+                  if (ext != null) {
+                      try {
+                          ext.compileSdk = 36
+                      } catch (Throwable t) {
+                          ext.compileSdkVersion(36)
+                      }
+                  }
+              }
+          }
+          EOG
+
       - name: Build Debug APK
         run: flutter build apk --debug
 
