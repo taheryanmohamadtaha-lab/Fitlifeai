@@ -6,6 +6,8 @@ import '../core/fa.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
 import 'backup_screen.dart';
+import 'coach_screen.dart';
+import 'exercises_screen.dart';
 import 'pain_screen.dart';
 import 'photos_screen.dart';
 import 'profile_form.dart';
@@ -86,6 +88,8 @@ class SettingsScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Column(
             children: [
+              _item(context, Icons.smart_toy_outlined, 'مربی هوشمند من', C.green, const CoachScreen()),
+              _item(context, Icons.self_improvement_rounded, 'تمرینات ایمن', C.blue, const ExercisesScreen()),
               _item(context, Icons.healing_outlined, 'پایش درد کمر و پا', C.red, const PainScreen()),
               _item(context, Icons.insights_rounded, 'گزارش‌ها', C.blue, const ReportsScreen()),
               _item(context, Icons.notifications_active_outlined, 'یادآوری‌ها', C.orange, const RemindersScreen()),

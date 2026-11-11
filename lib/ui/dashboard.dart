@@ -6,6 +6,7 @@ import '../core/fa.dart';
 import '../core/theme.dart';
 import '../data/models.dart';
 import '../state/app_state.dart';
+import 'coach_screen.dart';
 import 'food_sheets.dart';
 import 'pain_screen.dart';
 import 'progress.dart';
@@ -320,6 +321,24 @@ class Dashboard extends StatelessWidget {
           _PainCard(),
           const SizedBox(height: 12),
           const _SpineCard(),
+          const SizedBox(height: 12),
+          AppCard(
+            child: InkWell(
+              onTap: () => Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => const CoachScreen())),
+              child: const Row(
+                children: [
+                  Icon(Icons.smart_toy_outlined, color: C.green),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text('مربی هوشمند من؛ خلاصه امروز، پیشنهاد غذا و تحلیل روند',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  ),
+                  Icon(Icons.chevron_left_rounded),
+                ],
+              ),
+            ),
+          ),
         ],
       ],
     );

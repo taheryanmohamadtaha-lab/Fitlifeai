@@ -12,6 +12,7 @@ perms = [
     "android.permission.POST_NOTIFICATIONS",
     "android.permission.RECEIVE_BOOT_COMPLETED",
     "android.permission.VIBRATE",
+    "android.permission.INTERNET",
 ]
 add = ""
 for p in perms:

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fitlife_ai/core/calc.dart';
 import 'package:fitlife_ai/core/fa.dart';
+import 'package:fitlife_ai/coach/coach_engine.dart';
+import 'package:fitlife_ai/data/exercises.dart';
 import 'package:fitlife_ai/data/foods_seed.dart';
 import 'package:fitlife_ai/data/menu_planner.dart';
 import 'package:fitlife_ai/data/models.dart';
@@ -89,5 +91,17 @@ void main() {
     expect(w.length, 2);
     expect(w.first.avg, closeTo(114.5, 0.001));
     expect(w.last.avg, 113);
+  });
+
+  test('مربی: علائم اورژانسی و سؤال پزشکی رهگیری می‌شود', () {
+    expect(CoachEngine.guard('بی حسی ناحیه زینی پیدا کردم')?.emergency, true);
+    expect(CoachEngine.guard('کنترل ادرار ندارم')?.emergency, true);
+    expect(CoachEngine.guard('امروز چی بخورم؟'), isNull);
+  });
+
+  test('بانک تمرینات: فقط تنفس باز است و شناسه‌ها یکتا', () {
+    expect(exercises.where((e) => e.open).map((e) => e.id).toList(), ['breath_diaph']);
+    expect(exercises.map((e) => e.id).toSet().length, exercises.length);
+    expect(exerciseById('bird_dog'), isNotNull);
   });
 }

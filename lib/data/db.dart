@@ -13,9 +13,10 @@ class AppDb {
     final path = p.join(await getDatabasesPath(), 'fitlife.db');
     _db = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onUpgrade: (db, oldV, newV) async {
         if (oldV < 2) await _createPhase2(db);
+        if (oldV < 3) await _createPhase3(db);
       },
       onCreate: (db, v) async {
         await db.execute('CREATE TABLE settings(k TEXT PRIMARY KEY, v TEXT)');
@@ -36,6 +37,7 @@ class AppDb {
         await db.execute(
             'CREATE TABLE water_log(date TEXT PRIMARY KEY, ml INTEGER NOT NULL)');
         await _createPhase2(db);
+        await _createPhase3(db);
         final b = db.batch();
         for (final f in seedFoods) {
           b.insert('foods', f.toRow());
@@ -58,6 +60,13 @@ class AppDb {
     await db.execute('''CREATE TABLE IF NOT EXISTS photo_log(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT NOT NULL, path TEXT NOT NULL)''');
+  }
+
+  static Future<void> _createPhase3(Database db) async {
+    await db.execute('''CREATE TABLE IF NOT EXISTS exercise_log(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL, ex_id TEXT NOT NULL,
+      result TEXT NOT NULL, seconds INTEGER DEFAULT 0)''');
   }
 
   // ---------- تنظیمات / پروفایل ----------
@@ -200,6 +209,18 @@ class AppDb {
     await db.delete('photo_log', where: 'id = ?', whereArgs: [id]);
   }
 
+  // ---------- تمرین ----------
+  static Future<List<Map<String, Object?>>> exerciseLogs() async {
+    final db = await open();
+    return db.query('exercise_log', orderBy: 'id DESC', limit: 200);
+  }
+
+  static Future<void> addExerciseLog(String date, String exId, String result, int seconds) async {
+    final db = await open();
+    await db.insert('exercise_log',
+        {'date': date, 'ex_id': exId, 'result': result, 'seconds': seconds});
+  }
+
   // ---------- گزارش‌ها ----------
   /// مجموع روزانه تغذیه از تاریخ [from] به بعد
   static Future<List<Map<String, Object?>>> dailyTotals(String from) async {
@@ -228,6 +249,7 @@ class AppDb {
     'weight_log',
     'water_log',
     'pain_log',
+    'exercise_log',
   ];
 
   static Future<Map<String, Object?>> dumpAll() async {
@@ -272,6 +294,7 @@ class AppDb {
     await db.delete('weight_log');
     await db.delete('water_log');
     await db.delete('pain_log');
+    await db.delete('exercise_log');
     await db.delete('photo_log');
     await db.delete('foods', where: 'custom = 1');
   }

@@ -18,6 +18,9 @@ class AppState extends ChangeNotifier {
   List<WeightEntry> weights = [];
   List<PainEntry> pains = [];
   List<PhotoEntry> photos = [];
+  Map<String, String> settings = {};
+  List<Map<String, Object?>> exLogs = [];
+  int loggedDays14 = 0;
 
   DateTime selectedDay = dateOnly(DateTime.now());
   List<LogEntry> dayLogs = [];
@@ -40,6 +43,8 @@ class AppState extends ChangeNotifier {
 
   Future<void> _loadAll() async {
     final s = await AppDb.allSettings();
+    settings = s;
+    exLogs = await AppDb.exerciseLogs();
     profile = Profile.fromMap(s);
     themeMode = s['theme'] == 'light' ? ThemeMode.light : ThemeMode.dark;
     foods = await AppDb.foods();
@@ -60,6 +65,8 @@ class AppState extends ChangeNotifier {
     todayLogs = await AppDb.logsForDate(today);
     dayLogs = await AppDb.logsForDate(dateKey(selectedDay));
     todayWater = await AppDb.water(today);
+    final from14 = dateKey(dateOnly(DateTime.now()).subtract(const Duration(days: 13)));
+    loggedDays14 = (await AppDb.dailyTotals(from14)).length;
   }
 
   // ---------- مشتقات ----------
@@ -163,6 +170,69 @@ class AppState extends ChangeNotifier {
     await AppDb.deleteWeight(date);
     weights = await AppDb.weights();
     notifyListeners();
+  }
+
+  // ---------- تنظیمات عمومی ----------
+  Future<void> setSettings(Map<String, String> m) async {
+    await AppDb.setSettings(m);
+    settings = await AppDb.allSettings();
+    notifyListeners();
+  }
+
+  // ---------- چک‌این گرسنگی و انرژی ----------
+  /// مقدار ثبت‌شده امروز: [h] گرسنگی، [e] انرژی (۱ تا ۵) یا null
+  int? checkIn(String which, {DateTime? day}) {
+    final raw = settings['ci_${dateKey(dateOnly(day ?? DateTime.now()))}'];
+    if (raw == null || !raw.contains(',')) return null;
+    final p = raw.split(',');
+    return int.tryParse(which == 'h' ? p[0] : p[1]);
+  }
+
+  Future<void> saveCheckIn({int? hunger, int? energy}) async {
+    final h = hunger ?? checkIn('h') ?? 0;
+    final e = energy ?? checkIn('e') ?? 0;
+    await setSettings({'ci_${dateKey(dateOnly(DateTime.now()))}': '$h,$e'});
+  }
+
+  /// میانگین ۷ روز اخیر (فقط مقدارهای ثبت‌شده)؛ اگر کمتر از ۳ ثبت باشد null
+  double? checkInAvg(String which) {
+    final vals = <int>[];
+    for (var i = 0; i < 7; i++) {
+      final v = checkIn(which, day: dateOnly(DateTime.now()).subtract(Duration(days: i)));
+      if (v != null && v > 0) vals.add(v);
+    }
+    if (vals.length < 3) return null;
+    return vals.reduce((a, b) => a + b) / vals.length;
+  }
+
+  // ---------- ایمنی تمرین ----------
+  /// ارزیابی متخصص ثبت شده است؟
+  bool get specialistEvaluated => (settings['spine_eval_date'] ?? '').isNotEmpty;
+  String get evalBy => settings['spine_eval_by'] ?? '';
+  String get evalDate => settings['spine_eval_date'] ?? '';
+
+  bool exerciseApproved(String id) => settings['ex_ok_$id'] == '1';
+  String exerciseDose(String id) => settings['ex_dose_$id'] ?? '';
+
+  /// آیا الان می‌توان این تمرین را انجام داد؟
+  bool exerciseUnlocked(String id, {required bool open}) {
+    if (open) return true;
+    if (recentEmergency != null) return false;
+    final p = profile;
+    if (p != null && p.spine && !specialistEvaluated) return false;
+    return exerciseApproved(id);
+  }
+
+  Future<void> logExercise(String exId, String result, int seconds) async {
+    await AppDb.addExerciseLog(dateKey(dateOnly(DateTime.now())), exId, result, seconds);
+    exLogs = await AppDb.exerciseLogs();
+    notifyListeners();
+  }
+
+  /// آیا دو بار آخرِ این تمرین به‌خاطر درد متوقف شده؟
+  bool exerciseStoppedTwice(String exId) {
+    final l = exLogs.where((e) => e['ex_id'] == exId).take(2).toList();
+    return l.length == 2 && l.every((e) => e['result'] == 'pain_stop');
   }
 
   // ---------- درد کمر و پا ----------
