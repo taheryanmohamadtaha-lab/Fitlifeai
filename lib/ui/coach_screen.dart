@@ -292,13 +292,11 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
   @override
   void initState() {
     super.initState();
-    final c = AiOnline.config(context.read<AppState>());
     modelCtrl.text = context.read<AppState>().settings['ai_model'] ?? '';
     baseCtrl.text = context.read<AppState>().settings['ai_base'] ?? '';
     AiOnline.readKey().then((k) {
       if (mounted) setState(() => hasKey = k != null && k.isNotEmpty);
     });
-    c.hashCode;
   }
 
   @override

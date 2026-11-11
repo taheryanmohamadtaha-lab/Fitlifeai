@@ -376,7 +376,19 @@ class ExerciseDetail extends StatelessWidget {
                     activeColor: C.green,
                     value: s.exerciseApproved(e.id),
                     onChanged: canApprove
-                        ? (v) => s.setSettings({'ex_ok_${e.id}': v ? '1' : '0'})
+                        ? (v) async {
+                            if (v && s.exerciseStoppedTwice(e.id)) {
+                              final ok = await confirmDialog(
+                                context,
+                                'این حرکت قبلاً دو بار متوقف شده',
+                                'این حرکت دو بار پشت‌سرهم به‌خاطر درد متوقف شد. فقط اگر پزشک یا فیزیوتراپیست دوباره آن را تأیید کرده روشن کنید.',
+                                ok: 'تأیید متخصص را دارم',
+                              );
+                              if (!ok) return;
+                              await s.logExercise(e.id, 'reset', 0);
+                            }
+                            await s.setSettings({'ex_ok_${e.id}': v ? '1' : '0'});
+                          }
                         : null,
                     title: const Text('متخصص من این حرکت را تأیید کرده'),
                     subtitle: Text(
